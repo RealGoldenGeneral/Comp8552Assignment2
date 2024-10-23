@@ -32,6 +32,8 @@ public:
     QuadTree(int level, Rect *bounds)
     {
         //+++ Initialize the QuadTree here
+        this->level = level;
+        this->bounds = bounds;
     }
 
     ~QuadTree()
@@ -43,11 +45,14 @@ public:
     void Clear()
     {
         //+++ Clear the objects and nodes
+        this->objects.clear();
+        this->nodes.clear();
     }
     
     void Insert(Rect *rect)
     {
         //+++ This code has to be written to insert a new Rect object into the tree
+        objects.push_back(rect);
     }
     
     std::vector<int> *Retrieve(std::vector<int> *result, Rect *rect)
@@ -63,8 +68,8 @@ private:
     
     int level;
     Rect *bounds;
-    std::vector<Rect *> objects;
-    std::vector<QuadTree *> nodes;
+    std::vector<Rect*> objects;
+    std::vector<QuadTree*> nodes;
     
     void Split()
     {
