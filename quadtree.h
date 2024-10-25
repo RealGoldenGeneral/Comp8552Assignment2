@@ -34,6 +34,8 @@ public:
         //+++ Initialize the QuadTree here
         this->level = level;
         this->bounds = bounds;
+        objects.clear();
+        nodes.clear();
     }
 
     ~QuadTree()
@@ -52,13 +54,19 @@ public:
     void Insert(Rect *rect)
     {
         //+++ This code has to be written to insert a new Rect object into the tree
-        objects.push_back(rect);
+        this->objects.push_back(rect);
     }
     
     std::vector<int> *Retrieve(std::vector<int> *result, Rect *rect)
     {
         //+++ This code has to be written to retrieve all the rectangles
         //+++ that are in the same node in the quadtree as rect
+        for (int i = 0; i < objects.size(); ++i) {
+            if (objects[i]->x <= rect->x + rect->width && objects[i]->y <= rect->y + rect->height) {
+                result->push_back(objects[i]->id);
+            }
+        }
+
         return result;
     }
     
@@ -74,6 +82,27 @@ private:
     void Split()
     {
         //+++ This code has to be written to split a node
+        QuadTree* topLeft, *topRight, *bottomLeft, *bottomRight;
+        Rect* topLeftRect, *topRightRect, *bottomLeftRect, *bottomRightRect;
+
+        
+        topLeftRect = new Rect(bounds->id + 1, 0.0f, 0.0f, bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
+        topLeft = new QuadTree(level + 1, topLeftRect);
+
+        topRightRect = new Rect(bounds->id + 2, bounds->width / 2, 0, bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
+        topRight = new QuadTree(level + 1, topRightRect);
+
+        bottomLeftRect = new Rect(bounds->id + 3, 0, bounds->height / 2, bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
+        bottomLeft = new QuadTree(level + 1, bottomLeftRect);
+
+        bottomRightRect = new Rect(bounds->id + 4, bounds->width / 2, bounds->height / 2, bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
+        bottomRight = new QuadTree(level + 1, bottomRightRect);
+
+
+        nodes.push_back(topLeft);
+        nodes.push_back(topRight);
+        nodes.push_back(bottomLeft);
+        nodes.push_back(bottomRight);
     }
     
     int GetIndex(Rect *rect)
@@ -279,6 +308,23 @@ public:
                 //+++ collision has happened and set the collided
                 //+++ flag of the rectangles that have collided
                 //+++ as needed.
+       //         quad->Retrieve(&closeBy, );
+       //         for (vector<int>::iterator it2 = closeBy.begin(); it2 != closeBy.end(); ++it2)
+       //         {
+       //             if ((*it)->id == (*it2))
+       //                 continue;
+
+       //             for (int i = 0; i < rects.size(); ++i) {
+       //                 if (rects[i]->id == *it2) {
+							//if (IsCollided((*it), rects[i]))
+							//{
+							//	(*it)->collided = true;
+							//	rects[i]->collided = true;
+							//	break;
+							//}
+       //                 }
+       //             }
+       //         }
             } else {
                 for (vector<Rect*>::iterator it2 = rects.begin(); it2 != rects.end(); ++it2)
                 {
@@ -441,7 +487,19 @@ private:
     bool IsCollided(Rect* r1, Rect* r2)
     {
         ////+++  Implement this function to test if rectangles r1 and r2 have collided
-        return false;
+        float d1x = (r2->x) - (r1->x + r1->width);
+        float d1y = (r2->y) - (r1->y + r1->height);
+        float d2x = (r1->x) - (r2->x + r2->width);
+        float d2y = (r1->y) - (r2->y + r2->height);
+
+        if (d1x > 0.0f || d1y > 0.0f) {
+            return false;
+        }
+        if (d2x > 0.0f || d2y > 0.0f) {
+            return false;
+        }
+
+        return true;
     }
 
 };
