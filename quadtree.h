@@ -34,8 +34,8 @@ public:
         //+++ Initialize the QuadTree here
         this->level = level;
         this->bounds = bounds;
-        objects.clear();
-        nodes.clear();
+        objects.reserve(5000);
+        nodes.reserve(5000);
     }
 
     ~QuadTree()
@@ -48,23 +48,65 @@ public:
     {
         //+++ Clear the objects and nodes
         this->objects.clear();
-        this->nodes.clear();
+        for (QuadTree* node : nodes) {
+            if (node)
+            {
+                node->Clear();
+            }
+        }
     }
     
     void Insert(Rect *rect)
     {
         //+++ This code has to be written to insert a new Rect object into the tree
+        if (!nodes.empty())
+        {
+            int index = GetIndex(rect);
+            if (index != -1)
+            {
+                nodes[index]->Insert(rect);
+                return;
+            }
+        }
+
         this->objects.push_back(rect);
+
+        if (objects.size() > MAX_OBJECTS && level < MAX_LEVELS) {
+            if (nodes.empty())
+            {
+                Split();
+            }
+
+            auto it = objects.begin();
+            while (it != objects.end())
+            {
+                int index = GetIndex(*it);
+                if (index != -1)
+                {
+                    nodes[index]->Insert(*it);
+                    it = objects.erase(it);
+                }
+                else {
+                    ++it;
+                }
+            }
+        }
     }
     
     std::vector<int> *Retrieve(std::vector<int> *result, Rect *rect)
     {
+        int index = GetIndex(rect);
+
+        if (!nodes.empty() && index != -1)
+        {
+            nodes[index]->Retrieve(result, rect);
+        }
+
         //+++ This code has to be written to retrieve all the rectangles
         //+++ that are in the same node in the quadtree as rect
-        for (int i = 0; i < objects.size(); ++i) {
-            if (objects[i]->x <= rect->x + rect->width && objects[i]->y <= rect->y + rect->height) {
-                result->push_back(objects[i]->id);
-            }
+        for (const Rect* obj : objects)
+        {
+            result->push_back(obj->id);
         }
 
         return result;
@@ -283,48 +325,50 @@ public:
         quad->Clear();
         for (vector<Rect*>::iterator it = rects.begin(); it != rects.end(); ++it)
         {
-            float x = (*it)->x;
-            float y = (*it)->y;
-            x += (*it)->vx;
-            y += (*it)->vy;
-            (*it)->x = x;
-            (*it)->y = y;
+            auto rectVal = *it;
+
+            float x = rectVal->x;
+            float y = rectVal->y;
+            x += rectVal->vx;
+            y += rectVal->vy;
+            rectVal->x = x;
+            rectVal->y = y;
             if (x < 0 || x > scrWIDTH)
-                (*it)->vx *= -1;
+                rectVal->vx *= -1;
             if (y < 0 || y > scrHEIGHT)
-                (*it)->vy *= -1;
-            (*it)->collided = false;
-            quad->Insert((*it));
+                rectVal->vy *= -1;
+            rectVal->collided = false;
+            quad->Insert(rectVal);
         }
         
         std::vector<int> closeBy;
         for (vector<Rect*>::iterator it = rects.begin(); it != rects.end(); ++it)
         {
             if (useQuadTree)
-            {
-                closeBy.clear();
+            {                
                 //+++ Use the Retrieve() method of the quadtree
                 //+++ and the IsCollided() method to detect if a
                 //+++ collision has happened and set the collided
                 //+++ flag of the rectangles that have collided
                 //+++ as needed.
-       //         quad->Retrieve(&closeBy, );
-       //         for (vector<int>::iterator it2 = closeBy.begin(); it2 != closeBy.end(); ++it2)
-       //         {
-       //             if ((*it)->id == (*it2))
-       //                 continue;
+                closeBy.clear();
+                auto rectVal = *it;
+                quad->Retrieve(&closeBy, rectVal);
 
-       //             for (int i = 0; i < rects.size(); ++i) {
-       //                 if (rects[i]->id == *it2) {
-							//if (IsCollided((*it), rects[i]))
-							//{
-							//	(*it)->collided = true;
-							//	rects[i]->collided = true;
-							//	break;
-							//}
-       //                 }
-       //             }
-       //         }
+                for (int id : closeBy)
+                {
+                    if (rectVal->id == id) {
+                        continue;
+                    }
+
+                    Rect* other = rects[id];
+                    if (IsCollided(rectVal, other))
+                    {
+                        rectVal->collided = true;
+                        other->collided = true;
+                        break;
+                    }
+                }
             } else {
                 for (vector<Rect*>::iterator it2 = rects.begin(); it2 != rects.end(); ++it2)
                 {
@@ -487,19 +531,25 @@ private:
     bool IsCollided(Rect* r1, Rect* r2)
     {
         ////+++  Implement this function to test if rectangles r1 and r2 have collided
-        float d1x = (r2->x) - (r1->x + r1->width);
-        float d1y = (r2->y) - (r1->y + r1->height);
-        float d2x = (r1->x) - (r2->x + r2->width);
-        float d2y = (r1->y) - (r2->y + r2->height);
+        //float d1x = (r2->x) - (r1->x + r1->width);
+        //float d1y = (r2->y) - (r1->y + r1->height);
+        //float d2x = (r1->x) - (r2->x + r2->width);
+        //float d2y = (r1->y) - (r2->y + r2->height);
 
-        if (d1x > 0.0f || d1y > 0.0f) {
-            return false;
-        }
-        if (d2x > 0.0f || d2y > 0.0f) {
-            return false;
-        }
+        //if (d1x > 0.0f || d1y > 0.0f) {
+        //    return false;
+        //}
+        //if (d2x > 0.0f || d2y > 0.0f) {
+        //    return false;
+        //}
 
-        return true;
+        //return true;
+        
+        // Optimization
+		return !(r2->x >= r1->x + r1->width ||
+		 r2->y >= r1->y + r1->height ||
+		 r1->x >= r2->x + r2->width ||
+		 r1->y >= r2->y + r2->height);
     }
 
 };
