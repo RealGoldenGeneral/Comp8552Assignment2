@@ -34,8 +34,8 @@ public:
         //+++ Initialize the QuadTree here
         this->level = level;
         this->bounds = bounds;
-        objects.reserve(5000);
-        nodes.reserve(5000);
+        nodes.reserve(4);
+        objects.reserve(1024);
     }
 
     ~QuadTree()
@@ -54,6 +54,7 @@ public:
                 node->Clear();
             }
         }
+
     }
     
     void Insert(Rect *rect)
@@ -69,7 +70,7 @@ public:
             }
         }
 
-        this->objects.push_back(rect);
+        this->objects.emplace_back(rect);
 
         if (objects.size() > MAX_OBJECTS && level < MAX_LEVELS) {
             if (nodes.empty())
@@ -106,7 +107,7 @@ public:
         //+++ that are in the same node in the quadtree as rect
         for (const Rect* obj : objects)
         {
-            result->push_back(obj->id);
+            result->emplace_back(obj->id);
         }
 
         return result;
@@ -128,30 +129,30 @@ private:
         Rect* topLeftRect, *topRightRect, *bottomLeftRect, *bottomRightRect;
 
         
-        topLeftRect = new Rect(bounds->id + 1, 0.0f, 0.0f, bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
+        topLeftRect = new Rect(bounds->id + 1, bounds->x, bounds->y, bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
         topLeft = new QuadTree(level + 1, topLeftRect);
 
-        topRightRect = new Rect(bounds->id + 2, bounds->width / 2, 0, bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
+        topRightRect = new Rect(bounds->id + 2, (bounds->x + bounds->width / 2), bounds->y, bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
         topRight = new QuadTree(level + 1, topRightRect);
 
-        bottomLeftRect = new Rect(bounds->id + 3, 0, bounds->height / 2, bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
+        bottomLeftRect = new Rect(bounds->id + 3, bounds->x, (bounds->y + bounds->height / 2), bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
         bottomLeft = new QuadTree(level + 1, bottomLeftRect);
 
-        bottomRightRect = new Rect(bounds->id + 4, bounds->width / 2, bounds->height / 2, bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
+        bottomRightRect = new Rect(bounds->id + 4, (bounds->x + bounds->width / 2), (bounds->y + bounds->height / 2), bounds->width / 2, bounds->height / 2, 0.0f, 0.0f);
         bottomRight = new QuadTree(level + 1, bottomRightRect);
 
 
-        nodes.push_back(topLeft);
-        nodes.push_back(topRight);
-        nodes.push_back(bottomLeft);
-        nodes.push_back(bottomRight);
+        nodes.emplace_back(topLeft);
+        nodes.emplace_back(topRight);
+        nodes.emplace_back(bottomLeft);
+        nodes.emplace_back(bottomRight);
     }
     
     int GetIndex(Rect *rect)
     {
         // Calculate midpoints of both quadtree boundary and rectangle.
-        double horizontalMidpoint = (bounds->x + bounds->width) * 0.5;
-        double verticalMidpoint = (bounds->y + bounds->height) * 0.5;
+        double horizontalMidpoint = bounds->x + (bounds->width * 0.5);
+        double verticalMidpoint = bounds->y + (bounds->height * 0.5);
 
         // Verify rect location in quadrant.
         // Returns:
@@ -159,15 +160,18 @@ private:
         // - 1 for northeast
         // - 2 for southwest
         // - 3 for southeast
-        bool inLeft = (rect->x < horizontalMidpoint);
+        bool inLeft = (rect->x + rect->width < horizontalMidpoint);
         bool inRight = (rect->x + rect->width >= horizontalMidpoint);
         bool inTop = (rect->y + rect->height >= verticalMidpoint);
         bool inBottom = (rect->y < verticalMidpoint);
 
         if (inLeft == inRight || inTop == inBottom)
+        {
             return -1;
+        }
 
         return inRight + 2 * inBottom;
+
     }
 };
 
@@ -225,7 +229,7 @@ public:
             float vx = (rand() % randSIZE) / (float)randSIZE * 2*speed - speed;
             float vy = (rand() % randSIZE) / (float)randSIZE * 2*speed - speed;
             Rect* rect = new Rect(i, x, y, squareSIZE, squareSIZE, vx, vy);
-            rects.push_back(rect);
+            rects.emplace_back(rect);
             quad->Insert(rect);
         }
 
@@ -546,10 +550,15 @@ private:
         //return true;
         
         // Optimization
-		return !(r2->x >= r1->x + r1->width ||
-		 r2->y >= r1->y + r1->height ||
-		 r1->x >= r2->x + r2->width ||
-		 r1->y >= r2->y + r2->height);
+        float r1x = r1->x;
+        float r1y = r1->y;
+        float r2x = r2->x;
+        float r2y = r2->y;
+
+		return !(r2x >= r1x + r1->width ||
+		 r2y >= r1y + r1->height ||
+		 r1x >= r2x + r2->width ||
+		 r1y >= r2y + r2->height);
     }
 
 };
