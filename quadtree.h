@@ -32,7 +32,8 @@ public:
     QuadTree(int level, Rect *bounds)
     {
         //+++ Initialize the QuadTree here
-        // Initializes a quad tree the size of the window with a specified amount of levels
+        // Initializes a quad tree and pre-reserve a reasonable amount of objects
+	// and 4 quadtree nodes.
         this->level = level;
         this->bounds = bounds;
         nodes.reserve(4);
@@ -48,7 +49,7 @@ public:
     void Clear()
     {
         //+++ Clear the objects and nodes
-        // Clears every node in the quadtree iteratively
+        // Clears every node in the quadtree recursively
         this->objects.clear();
         for (QuadTree* node : nodes) {
             if (node)
@@ -62,7 +63,7 @@ public:
     void Insert(Rect *rect)
     {
         //+++ This code has to be written to insert a new Rect object into the tree
-        // If there are already existing nodes, insert a rectangle into the nodes array.
+        // If quadtree is not empty, we recursively place the object further into the quadtree.
         if (!nodes.empty())
         {
             int index = GetIndex(rect);
@@ -73,12 +74,11 @@ public:
             }
         }
 
-        // Add a rectangle into the objects array
+        // We are far as we can go into the quadtree, Add a rectangle into the objects array
         this->objects.emplace_back(rect);
 
-        // If the tree hasn't reach max depth, recursively insert the node into the tree.
+        // If the tree hasn't reach max depth, Split the quadtree, recursively insert the node into the tree.
         if (objects.size() > MAX_OBJECTS && level < MAX_LEVELS) {
-            // If the tree is empty, split the node into two leaves.
             if (nodes.empty())
             {
                 Split();
@@ -132,7 +132,7 @@ private:
     void Split()
     {
         //+++ This code has to be written to split a node
-        // Splits a node into 4 branches
+	// Initialize a new subsection of the quadtree with 4 quadtree nodes.
         QuadTree* topLeft, *topRight, *bottomLeft, *bottomRight;
         Rect* topLeftRect, *topRightRect, *bottomLeftRect, *bottomRightRect;
 
@@ -559,7 +559,7 @@ private:
         //return true;
         
         // Tests if two rectangles have collided.
-        // Optimization
+        // Optimizations made here to reduce pointer dereferencing and branching logic.
         float r1x = r1->x;
         float r1y = r1->y;
         float r2x = r2->x;
