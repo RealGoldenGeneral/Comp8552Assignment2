@@ -32,6 +32,7 @@ public:
     QuadTree(int level, Rect *bounds)
     {
         //+++ Initialize the QuadTree here
+        // Initializes a quad tree the size of the window with a specified amount of levels
         this->level = level;
         this->bounds = bounds;
         nodes.reserve(4);
@@ -47,6 +48,7 @@ public:
     void Clear()
     {
         //+++ Clear the objects and nodes
+        // Clears every node in the quadtree iteratively
         this->objects.clear();
         for (QuadTree* node : nodes) {
             if (node)
@@ -60,6 +62,7 @@ public:
     void Insert(Rect *rect)
     {
         //+++ This code has to be written to insert a new Rect object into the tree
+        // If there are already existing nodes, insert a rectangle into the nodes array.
         if (!nodes.empty())
         {
             int index = GetIndex(rect);
@@ -70,9 +73,12 @@ public:
             }
         }
 
+        // Add a rectangle into the objects array
         this->objects.emplace_back(rect);
 
+        // If the tree hasn't reach max depth, recursively insert the node into the tree.
         if (objects.size() > MAX_OBJECTS && level < MAX_LEVELS) {
+            // If the tree is empty, split the node into two leaves.
             if (nodes.empty())
             {
                 Split();
@@ -105,6 +111,7 @@ public:
 
         //+++ This code has to be written to retrieve all the rectangles
         //+++ that are in the same node in the quadtree as rect
+        // Retrives all rectanges that are in the same node in the quad tree as rect,
         for (const Rect* obj : objects)
         {
             result->emplace_back(obj->id);
@@ -125,6 +132,7 @@ private:
     void Split()
     {
         //+++ This code has to be written to split a node
+        // Splits a node into 4 branches
         QuadTree* topLeft, *topRight, *bottomLeft, *bottomRight;
         Rect* topLeftRect, *topRightRect, *bottomLeftRect, *bottomRightRect;
 
@@ -355,6 +363,7 @@ public:
                 //+++ collision has happened and set the collided
                 //+++ flag of the rectangles that have collided
                 //+++ as needed.
+                // Detects collision between two rectangles
                 closeBy.clear();
                 auto rectVal = *it;
                 quad->Retrieve(&closeBy, rectVal);
@@ -549,6 +558,7 @@ private:
 
         //return true;
         
+        // Tests if two rectangles have collided.
         // Optimization
         float r1x = r1->x;
         float r1y = r1->y;
