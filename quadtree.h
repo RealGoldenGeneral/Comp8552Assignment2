@@ -33,7 +33,7 @@ public:
     {
         //+++ Initialize the QuadTree here
         // Initializes a quad tree and pre-reserve a reasonable amount of objects
-	// and 4 quadtree nodes.
+	    // and 4 quadtree nodes.
         this->level = level;
         this->bounds = bounds;
         nodes.reserve(4);
@@ -363,7 +363,8 @@ public:
                 //+++ collision has happened and set the collided
                 //+++ flag of the rectangles that have collided
                 //+++ as needed.
-                // Detects collision between two rectangles
+                // Retrieves closeby objects to the current rect and checks collisions
+                // between all closeby objects by id using the quadtree structure
                 closeBy.clear();
                 auto rectVal = *it;
                 quad->Retrieve(&closeBy, rectVal);
@@ -543,21 +544,6 @@ private:
 
     bool IsCollided(Rect* r1, Rect* r2)
     {
-        ////+++  Implement this function to test if rectangles r1 and r2 have collided
-        //float d1x = (r2->x) - (r1->x + r1->width);
-        //float d1y = (r2->y) - (r1->y + r1->height);
-        //float d2x = (r1->x) - (r2->x + r2->width);
-        //float d2y = (r1->y) - (r2->y + r2->height);
-
-        //if (d1x > 0.0f || d1y > 0.0f) {
-        //    return false;
-        //}
-        //if (d2x > 0.0f || d2y > 0.0f) {
-        //    return false;
-        //}
-
-        //return true;
-        
         // Tests if two rectangles have collided.
         // Optimizations made here to reduce pointer dereferencing and branching logic.
         float r1x = r1->x;
